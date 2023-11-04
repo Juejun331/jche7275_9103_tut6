@@ -20,13 +20,26 @@ let lakeMidRedAcc;
 let lakeMidGreenVel;
 let lakeMidGreenAcc;
 
+let imageWidth;
+let imageHeight;
+
 function preload() {
 	img = loadImage('Images/Scream.jpeg');
 }
 function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  img.resize(width, height);
-  console.log(width);
+  if((windowWidth/windowHeight)>(810/1024)){
+    resizeCanvas(windowHeight/1024*810, windowHeight);
+    img.resize(windowHeight/1024*810, windowHeight);
+    imageWidth=height/1024*810;
+    imageHeight=height;
+  }else{
+    resizeCanvas(windowWidth, windowWidth/810*1024);
+    img.resize(windowWidth, windowWidth/810*1024);
+    imageWidth=width;
+    imageHeight=width/810*1024;
+  }
+  //img.resize(width, height);
+  //console.log(width);
   //clear the canvas
   let segmentWidth = img.width / numSegments;
   let segmentHeight = img.height / numSegments;
@@ -52,25 +65,34 @@ segmentHeight = img.height / numSegments;
     }
   }
   //raddom create a new boat
-  boatX=random(width);
-  boatY=random(0.5*height);
+  boatX=random(img.width);
+  boatY=random(0.5*img.height);
   boatDir=0;
   //make sure the position of boat is in the lake
-  if((boatX*40/81+25/71*width)<boatY){
-    boatY=boatX*40/81+25/71*width;
+  if((boatX*40/81+25/81*img.height)<boatY){
+    boatY=boatX*40/81+25/81*img.height;
   }
-  else if(boatY<21/71*width){
-    boatY=21/71*width;
+  else if(boatY<25/81*img.height){
+    boatY=25/71*img.height;
 }
 }
 function setup() {
-	canvasSize = min(windowWidth, windowHeight);
-	createCanvas(canvasSize, canvasSize);
-	img.resize(width, height);
-  console.log(width);
-  console.log(height);
+	//canvasSize = min(windowWidth, windowHeight);
+	
+	//img.resize(width, height);
+  if((windowWidth/windowHeight)>(810/1024)){
+    createCanvas(windowHeight/1024*810, windowHeight);
+    img.resize(windowHeight/1024*810, windowHeight);
+    imageWidth=height/1024*810;
+    imageHeight=height;
+  }else{
+    createCanvas(windowWidth, windowWidth/810*1024);
+    img.resize(windowWidth, windowWidth/810*1024);
+    imageWidth=width;
+    imageHeight=width/810*1024;
+  }
 
-	strokeWeight(4/500*width);//the size of ever particle
+	strokeWeight(4/500*img.width);//the size of ever particle
 	background(0);//black background
 
 	boatVel = createVector(0, 0);
@@ -98,22 +120,22 @@ function setup() {
     }
   }
   //raddom create a new boat
-  boatX=random(width);
-  boatY=random(0.5*height);
+  boatX=random(img.width);
+  boatY=random(0.5*img.height);
   boatDir=0;
   //make sure the position of boat is in the lake
-  if((boatX*40/81+25/71*width)<boatY){
-    boatY=boatX*40/81+25/71*width;
+  if((boatX*40/81+25/81*img.height)<boatY){
+    boatY=boatX*40/81+25/81*img.height;
   }
-  else if(boatY<21/71*width){
-    boatY=21/71*width;
+  else if(boatY<25/81*img.height){
+    boatY=25/81*img.height;
 }
 }
 function draw() {
 //Draw a black rectangle with an opacity of 20 to create the trail effect on each frame
 	fill(0, 20);
 	noStroke();
-	rect(0, 0, width, height);
+	rect(0, 0, img.width, img.height);
 	//update the position of each particle each frame
 	for (let p of particles) {
 		p.move();
@@ -140,14 +162,14 @@ class Particle {
     let redValue=red(this.color);
     let greenValue=green(this.color);
     //usr if to get the area of blue lake
-    if((this.pos.x*40/81+25/71*height)>this.pos.y&&(redValue<100||blueValue>150)&&this.pos.y>height*0.19){
+    if((this.pos.x*40/81+40/81*img.height)>this.pos.y&&(redValue<100||blueValue>150)&&this.pos.y>img.height*0.19){
       let attraction = p5.Vector.sub(this.target, this.pos);
       attraction.mult(attForce);
       //let tmpForce = p5.Vector.sub(createVector(mouseX, mouseY), this.pos).limit(10);
       //make lake particle leave away from the boat to imitate that the boat whipped up waves
       //the reference of the use of tmpForce & attraction from https://openprocessing.org/sketch/1084140
-      let tmpForce = p5.Vector.sub(createVector(boatX, boatY), this.pos).limit(5/700*height);
-      let repulsion = tmpForce.copy().normalize().mult(-10/700*height).sub(tmpForce);
+      let tmpForce = p5.Vector.sub(createVector(boatX, boatY), this.pos).limit(5/700*img.height);
+      let repulsion = tmpForce.copy().normalize().mult(-10/700*img.height).sub(tmpForce);
       repulsion.mult(repForce);
       this.acc = p5.Vector.add(attraction, repulsion);
       this.vel.mult(0.97);
@@ -155,10 +177,10 @@ class Particle {
       this.vel.limit(3);
       this.pos.add(this.vel);
       //make sure the lake particle not too far from the lake
-      if(this.pos.y<=height*0.19){
-        this.pos.y=height*0.19+1;
+      if(this.pos.y<=img.height*0.19){
+        this.pos.y=img.height*0.19+1;
       }
-    }else if(this.pos.y<height*0.44&&redValue>180&&greenValue>120&&this.pos.y>height*0.32){
+    }else if(this.pos.y<img.height*0.44&&redValue>180&&greenValue>120&&this.pos.y>img.height*0.32){
     //add random gradient of color to the stationary particles in the middle of the lake
       lakeMidRedAcc=random(-0.5,0.5);
       lakeMidRedAcc=random(-0.5,0.5);
@@ -203,21 +225,21 @@ class Particle {
         this.color[1]=120;
         lakeMidGreenVel=5;
       }
-    }else if((this.pos.x*79/81+height*0.4)<this.pos.y){
+    }else if((this.pos.x*93/81+img.height*0.4)<this.pos.y){
       //draw the bridge, make the bridge particles flow toward the corner 
-      if(this.pos.y>=height){
+      if(this.pos.y>=img.height){
         //if a particle come the margin of the image, move this partivle to the starting point
-        this.pos.y=this.pos.y-this.pos.x*79/81;
+        this.pos.y=this.pos.y-this.pos.x*93/81;
         this.pos.x=0;
       }
       else{
         //make the particle move follow the direction of the bridge
-        if(width>(500/700*height)){
-          this.pos.add(5*1,5*79/81);
-        }else if(width>(200/700*height)){
-          this.pos.add(2*1,2*79/81);
+        if(img.width>(500/700*img.height)){
+          this.pos.add(5*1,5*93/81);
+        }else if(img.width>(200/700*img.height)){
+          this.pos.add(2*1,2*93/81);
         }else{
-          this.pos.add(0.5*1,0.5*79/81);
+          this.pos.add(0.5*1,0.5*93/81);
         }
       }
 
@@ -247,11 +269,11 @@ function boat(x,y){
   rect(bX,bY-7,5,2);
   pop();
   //make sure boat move in the blue lake
-  if((boatX*40/81+25/71*width)<boatY){
+  if((boatX*40/81+25/81*img.height)<boatY){
     boatAcc.y=-0.2;
     boatY--;
   }
-  else if(boatY<21/71*width){
+  else if(boatY<25/81*img.height){
     boatY++;
     boatAcc.y=0.2;
   }else if(boatDir==1){
@@ -269,7 +291,7 @@ function boat(x,y){
     boatVel.limit(2);//make sure the speed of the boat not too fast
     boatX=boatX+boatVel.x;
     boatY=boatY+boatVel.y;
-  if(boatX>=width){
+  if(boatX>=img.width){
     boatDir=1;
   }else if(boatX<=0){
     boatX++;
