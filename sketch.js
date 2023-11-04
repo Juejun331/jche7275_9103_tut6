@@ -1,164 +1,178 @@
-//number of particles for each types
-let  num = 3000;
-// three types of particles a, b and c
-var particles_a = [];
-var particles_b = [];
-var particles_c = [];
-var particles_d = [];
-var particles_e = [];
-var particles_f = [];
-var fade = 100; // the length of the particle tail
-var radius = 3; // radius of the particles
+let img;
+let canvasSize=1;
+let attForce = 0.01;
+let repForce = 0.01;
 
-//scale of curviness of the noise 
-let noiseScale = 300;
+let particles = [];
+let numParticle = 20000;
+let numSegments=150;
+let particlesPrimary=[];
+let m=[];
+let boatX;
+let boatY;
+let boatDir;
+let boatVel;
+let boatAcc;
+let bridgeVel;
+let bridgeAcc;
 
-//how often the direction of the noise change
-let noiseStrength = 1.2;
-
+function preload() {
+	img = loadImage('Images/Scream.jpeg');
+}
 
 function setup() {
-  createCanvas(810, 1024);
-  fill(140,140,180); 
-  noStroke();
-  rect(0, 0, width, height);
-  noStroke();
-  for (let i=0; i<num; i++) {
-    let loc_a = createVector(random(width*1.2), random(height), 2);
-    let angle_a = random(TWO_PI);
-    let dir_a = createVector(cos(angle_a), sin(angle_a));
-		let loc_b = createVector(random(width*1.2), random(height), 2);
-    let angle_b = random(TWO_PI);
-    let dir_b = createVector(cos(angle_b), sin(angle_b));
-		let loc_c = createVector(random(width*1.2), random(height), 2);
-    let angle_c = random(TWO_PI);
-    let dir_c = createVector(cos(angle_c), sin(angle_c));
+	canvasSize = min(windowWidth, windowHeight);
+	createCanvas(canvasSize, canvasSize);
+	img.resize(width, height);
+  console.log(width);
+  console.log(height);
+	strokeWeight(5);
+	background(0);
 
-    let loc_d = createVector(random(width*1.2), random(height), 2);
-    let angle_d = random(TWO_PI);
-    let dir_d = createVector(cos(angle_d), sin(angle_d));
+	boatVel = createVector(0, 0);
+  boatAcc = createVector(0, 0);
 
-    let loc_e = createVector(random(width*1.2), random(height), 2);
-    let angle_e = random(TWO_PI);
-    let dir_e = createVector(cos(angle_e), sin(angle_e));
+  bridgeVel=createVector(79/81, 1);
+  bridgeAcc=createVector(0, 0);
 
-    let loc_f = createVector(random(width*1.2), random(height), 2);
-    let angle_f = random(TWO_PI);
-    let dir_f = createVector(cos(angle_e), sin(angle_e));
-    //particles[i]= new Particle(loc, dir, speed); slower particles will looks shorter 
-		particles_a[i] = new Particle(loc_a, dir_a, 2);
-		particles_b[i] = new Particle(loc_b, dir_b, 2);
-		particles_c[i] = new Particle(loc_c, dir_c, 2);
-    particles_d[i] = new Particle(loc_d, dir_d, 2);
-    particles_e[i] = new Particle(loc_e, dir_e, 2);
-		particles_f[i] = new Particle(loc_f, dir_f, 3);
+  let segmentWidth = img.width / numSegments;
+  let segmentHeight = img.height / numSegments;
+  /*
+  Divide the original image into segments, we are going to use nested loops
+  lets have a look at how nested loops work
+  first we use a loop to move down the image, 
+  we will use the height of the image as the limit of the loop
+  then we use a loop to move across the image, 
+  we will use the width of the image as the limit of the loop
+  Lets look carefully at what happens, the outer loop runs once, so we start at the top of the image
+  Then the inner loop runs to completetion, moving from left to right across the image
+  Then the outer loop runs again, moving down 1 row image, and the inner loop runs again,
+  moving all the way from left to right
+  */
+
+  for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
+    //this is looping over the height
+    for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
+      //this loops over width
+      //This will create a segment for each x and y position
+      let pX=segXPos;
+      let pY=segYPos;
+      particles.push(new Particle(pX,pY));
+    }
   }
+  boatX=random(width);
+  boatY=random(0.5*height);
+  boatDir=0;
+  if((boatX*40/81+250)<boatY){
+    boatY=boatX*40/81+250;
+  }
+  else if(boatY<210){
+    boatY=210;
+  //boat(bX,bY)
 }
-
+}
 function draw() {
+
+	fill(0, 20);
+	noStroke();
+	rect(0, 0, width, height);
 	
-	//smooth();
-  //background(0); // comment the background to see the particle tails uncomment to hide the tails
-			
-  fill(140,140,180, 5); // put a blue for hiding the tails 
-  noStroke();
-  rect(0, 0, width, height);
-    
-  for (let i=0; i<num; i++) {
-		
-		fill(40,50,180, fade); //blue
-		particles_a[i].move();
-		particles_a[i].update(radius);
-		particles_a[i].checkEdges();
+	for (let p of particles) {
+		p.move();
+		p.display();
+	}
 
-		fill(90,150,110, fade); //green
-		particles_b[i].move();
-		particles_b[i].update(radius);
-		particles_b[i].checkEdges();
-
-    fill(40,50,180, fade); //blue
-    particles_c[i].move();
-    particles_c[i].update(radius);
-    particles_c[i].checkEdges();
-
-    
-		particles_d[i].move();
-		particles_d[i].update(radius);
-		particles_d[i].checkEdges();
-
-    fill(0, fade); //black
-		particles_e[i].move();
-		particles_e[i].update(radius);
-		particles_e[i].checkEdges();
-
-    //fill(height, mouseY , mouseX , fade); // colorchange
-    let mR=mouseY;
-    let mG=mouseX;
-    while(mR>205,mG>205){
-      mR--;
-      mG--;
-    }
-    fill(mR, mG , 255 , fade); // colorchange
-		particles_f[i].move();
-		particles_f[i].update(radius);
-		particles_f[i].checkEdges();
-
-
-		
-  }
+  boat(boatX,boatY);
 }
 
-let Particle = function(loc_, dir_, speed_) {
-  this.loc = loc_;
-	this.dir = dir_;
-	this.speed = speed_;
-	this.d = 1;
-};
-
-Particle.prototype.run = function() {
-	  this.move();
-    this.checkEdges();
-    this.update();
-};
-
-// Method to move position
-Particle.prototype.move = function(){
-	  this.angle=noise(this.loc.x/noiseScale, this.loc.y/noiseScale, frameCount/noiseScale)*TWO_PI*noiseStrength;
-    this.dir.x = cos(this.angle)+sin(this.angle)-sin(this.angle);
-    this.dir.y = sin(this.angle)-cos(this.angle)*sin(this.angle);
-    this.vel = this.dir.copy();
-    this.vel.mult(this.speed*this.d);
-    this.loc.add(this.vel);
-};
-
-// Method to chech edges 
-Particle.prototype.checkEdges = function(){
-  if (this.loc.x < 0 || this.loc.x > width || this.loc.y < 0 || this.loc.y > height) {    
-      this.loc.x = random(width*1.2);
-      this.loc.y = random(height);
+class Particle {
+	constructor(x, y) {
+    this.x = x;
+    this.y = y;
+		this.pos = createVector(x, y);
+		this.target = this.pos.copy();
+		this.vel = createVector(0,0);
+		this.acc = createVector(0, 0);
+		this.color = img.get(x, y);
+	}
+	
+	move() {
+    let blueValue=blue(this.color);
+    let redValue=red(this.color);
+    let greenValue=green(this.color);
+    if((this.pos.x*40/81+250)>this.pos.y&&(redValue<100||blueValue>150)&&this.pos.y>height*0.18){
+      let attraction = p5.Vector.sub(this.target, this.pos);
+      attraction.mult(attForce);
+      //let tmpForce = p5.Vector.sub(createVector(mouseX, mouseY), this.pos).limit(10);
+      let tmpForce = p5.Vector.sub(createVector(boatX, boatY), this.pos).limit(10);
+      let repulsion = tmpForce.copy().normalize().mult(-30).sub(tmpForce);
+      repulsion.mult(repForce);
+      this.acc = p5.Vector.add(attraction, repulsion);
+      this.vel.mult(0.97);
+      this.vel.add(this.acc);
+      this.vel.limit(3);
+      this.pos.add(this.vel);
+    }else if((this.pos.x*79/81+width*0.4)<this.pos.y){
+      if(this.pos.y>=height){
+        this.pos.x=this.pos.x-((this.pos.y-width*0.3)*81/79);
+        this.pos.y=this.pos.y-this.pos.x*79/81-width*0.7;
+        this.pos.x=0;
+        //this.vel.add(-79/81,-1);
+      }
+      else{
+        this.vel.add(0.1*90/81,0.1);
+        this.pos.add(this.vel);
+      }
+      //this.pos.add(this.vel);
     }
-    while ((this.loc.y<298&&this.loc.x<399)||this.loc.y < 269) {
-      this.loc.x = random(width*1.2);    
-      this.loc.y = random(height);
-    }
-    
-};
-
-// Method to chech green part edges 
-Particle.prototype.checkEdgesGreen = function(){
-  if (this.loc.x < 0 || this.loc.x > width || this.loc.y < 0 || this.loc.y > height) {    
-      this.loc.x = random(width*1.2);
-      this.loc.y = random(height);
-    }
-    while ((this.loc.y<298&&this.loc.x<399)||this.loc.y < 269) {
-      this.loc.x = random(width*1.2);    
-      this.loc.y = random(height);
-    }
-    
-};
+	}
+	display() {
+		stroke(this.color);
+		point(this.pos.x, this.pos.y);
+	}
+	
+}
 
 
-// Method to update position
-Particle.prototype.update = function(r){
-    ellipse(this.loc.x, this.loc.y, r);
-};
+function boat(x,y){
+  //let bX=mouseX;
+  //let bY=mouseY;
+  let bX=x;
+  let bY=y;
+  push();
+  fill(255);
+  stroke(255);
+  strokeWeight(1);
+  arc(bX,bY,20,8,0*PI,1*PI,OPEN);
+  line(bX,bY,bX,bY-7);
+  noStroke();
+  fill(255,255,255);
+  rect(bX,bY-7,5,2);
+  pop();
+  if((boatX*40/81+250)<boatY){
+    boatAcc.y=-0.5;
+    boatY--;
+  }
+  else if(boatY<210){
+    boatY++;
+    boatAcc.y=0.5;
+  }else if(boatDir==1){
+    boatX--;
+    boatY--;
+    if(boatX<=0){
+      boatVel.mult(-1);
+      boatX=boatX+boatVel.x;
+    }
+  }else{
+    boatAcc.add(random(-0.1,0.1),random(-0.1,0.1));
+    boatAcc.limit(0.5);
+    boatVel.add(boatAcc);
+    boatVel.limit(2);
+    boatX=boatX+boatVel.x;
+    boatY=boatY+boatVel.y;
+  if(boatX>=width){
+    boatDir=1;
+  }else if(boatX<=0){
+    boatX++;
+  }}
+}
