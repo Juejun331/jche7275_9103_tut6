@@ -23,31 +23,24 @@ let lakeMidGreenAcc;
 function preload() {
 	img = loadImage('Images/Scream.jpeg');
 }
-
-function setup() {
-	canvasSize = min(windowWidth, windowHeight);
-	createCanvas(canvasSize, canvasSize);
-	img.resize(width, height);
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  img.resize(width, height);
   console.log(width);
-  console.log(height);
-
-	strokeWeight(5);//the size of ever particle
-	background(0);//black background
-
-	boatVel = createVector(0, 0);
-  boatAcc = createVector(0, 0);
-
-  bridgeVel=createVector(79/81, 1);
-  bridgeAcc=createVector(0, 0);
-
-  lakeMidRedVel=1;
-  lakeMidRedAcc=0;
-  lakeMidGreenVel=1;
-  lakeMidGreenAcc=0;
-
+  //clear the canvas
   let segmentWidth = img.width / numSegments;
   let segmentHeight = img.height / numSegments;
-//use for loop to get every segment color of img and use particles array to store them
+  for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
+    //this is looping over the height
+    for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
+      //this loops over width
+      //This will create a segment for each x and y position
+      particles.pop();
+    }
+  }
+//redraw the particle
+segmentWidth = img.width / numSegments;
+segmentHeight = img.height / numSegments;
   for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
     //this is looping over the height
     for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
@@ -63,11 +56,57 @@ function setup() {
   boatY=random(0.5*height);
   boatDir=0;
   //make sure the position of boat is in the lake
-  if((boatX*40/81+250)<boatY){
-    boatY=boatX*40/81+250;
+  if((boatX*40/81+25/71*width)<boatY){
+    boatY=boatX*40/81+25/71*width;
   }
-  else if(boatY<210){
-    boatY=210;
+  else if(boatY<21/71*width){
+    boatY=21/71*width;
+}
+}
+function setup() {
+	canvasSize = min(windowWidth, windowHeight);
+	createCanvas(canvasSize, canvasSize);
+	img.resize(width, height);
+  console.log(width);
+  console.log(height);
+
+	strokeWeight(4/500*width);//the size of ever particle
+	background(0);//black background
+
+	boatVel = createVector(0, 0);
+  boatAcc = createVector(0, 0);
+
+  bridgeVel=createVector(79/81, 1);
+  bridgeAcc=createVector(0, 0);
+
+  lakeMidRedVel=1;
+  lakeMidRedAcc=0;
+  lakeMidGreenVel=1;
+  lakeMidGreenAcc=0;
+
+  let segmentWidth = img.width / numSegments;
+  let segmentHeight = img.height / numSegments;
+//use for loop to get every segment color of img and use particles array to store them, reference:https://canvas.sydney.edu.au/courses/53019/pages/week-7-tutorial?module_item_id=2098597
+  for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
+    //this is looping over the height
+    for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
+      //this loops over width
+      //This will create a segment for each x and y position
+      let pX=segXPos;
+      let pY=segYPos;
+      particles.push(new Particle(pX,pY));
+    }
+  }
+  //raddom create a new boat
+  boatX=random(width);
+  boatY=random(0.5*height);
+  boatDir=0;
+  //make sure the position of boat is in the lake
+  if((boatX*40/81+25/71*width)<boatY){
+    boatY=boatX*40/81+25/71*width;
+  }
+  else if(boatY<21/71*width){
+    boatY=21/71*width;
 }
 }
 function draw() {
@@ -101,20 +140,24 @@ class Particle {
     let redValue=red(this.color);
     let greenValue=green(this.color);
     //usr if to get the area of blue lake
-    if((this.pos.x*40/81+250)>this.pos.y&&(redValue<100||blueValue>150)&&this.pos.y>height*0.18){
+    if((this.pos.x*40/81+25/71*height)>this.pos.y&&(redValue<100||blueValue>150)&&this.pos.y>height*0.19){
       let attraction = p5.Vector.sub(this.target, this.pos);
       attraction.mult(attForce);
       //let tmpForce = p5.Vector.sub(createVector(mouseX, mouseY), this.pos).limit(10);
       //make lake particle leave away from the boat to imitate that the boat whipped up waves
       //the reference of the use of tmpForce & attraction from https://openprocessing.org/sketch/1084140
-      let tmpForce = p5.Vector.sub(createVector(boatX, boatY), this.pos).limit(10);
-      let repulsion = tmpForce.copy().normalize().mult(-30).sub(tmpForce);
+      let tmpForce = p5.Vector.sub(createVector(boatX, boatY), this.pos).limit(5/700*height);
+      let repulsion = tmpForce.copy().normalize().mult(-10/700*height).sub(tmpForce);
       repulsion.mult(repForce);
       this.acc = p5.Vector.add(attraction, repulsion);
       this.vel.mult(0.97);
       this.vel.add(this.acc);
       this.vel.limit(3);
       this.pos.add(this.vel);
+      //make sure the lake particle not too far from the lake
+      if(this.pos.y<=height*0.19){
+        this.pos.y=height*0.19+1;
+      }
     }else if(this.pos.y<height*0.44&&redValue>180&&greenValue>120&&this.pos.y>height*0.32){
     //add random gradient of color to the stationary particles in the middle of the lake
       lakeMidRedAcc=random(-0.5,0.5);
@@ -142,18 +185,23 @@ class Particle {
       }else if(lakeMidGreenVel<=-10){
         lakeMidGreenVel=-10;
       }
+      //color[0] is red value of the pixel of the image, color[1] is green value of the pixel of the image, reference:https://p5js.org/reference/#/p5.Image/pixels
       this.color[0]+=lakeMidRedVel;
       this.color[1]+=lakeMidGreenVel;
       //set the margin of the color change, improve the fault tolerance rate
       if(this.color[0]>=255){
         this.color[0]=255;
+        lakeMidRedVel=-5;
       }else if(this.color[0]<=180){
         this.color[0]=180;
+        lakeMidRedVel=5;
       }
       if(this.color[1]>=255){
         this.color[1]=255;
-      }else if(this.color[2]<=0){
-        this.color[1]=0;
+        lakeMidGreenVel=-5;
+      }else if(this.color[1]<=120){
+        this.color[1]=120;
+        lakeMidGreenVel=5;
       }
     }else if((this.pos.x*79/81+height*0.4)<this.pos.y){
       //draw the bridge, make the bridge particles flow toward the corner 
@@ -164,7 +212,13 @@ class Particle {
       }
       else{
         //make the particle move follow the direction of the bridge
-        this.pos.add(5*1,5*79/81);
+        if(width>(500/700*height)){
+          this.pos.add(5*1,5*79/81);
+        }else if(width>(200/700*height)){
+          this.pos.add(2*1,2*79/81);
+        }else{
+          this.pos.add(0.5*1,0.5*79/81);
+        }
       }
 
     }
@@ -193,20 +247,20 @@ function boat(x,y){
   rect(bX,bY-7,5,2);
   pop();
   //make sure boat move in the blue lake
-  if((boatX*40/81+250)<boatY){
-    boatAcc.y=-0.5;
+  if((boatX*40/81+25/71*width)<boatY){
+    boatAcc.y=-0.2;
     boatY--;
   }
-  else if(boatY<210){
+  else if(boatY<21/71*width){
     boatY++;
-    boatAcc.y=0.5;
+    boatAcc.y=0.2;
   }else if(boatDir==1){
     boatX--;
     boatY--;
-    if(boatX<=0){
+    /*if(boatX<=0){
       boatVel.mult(-1);
       boatX=boatX+boatVel.x;
-    }
+    }*/
   }else{
     // make boat move randomly, and add ease effect
     boatAcc.add(random(-0.1,0.1),random(-0.1,0.1));
@@ -219,5 +273,7 @@ function boat(x,y){
     boatDir=1;
   }else if(boatX<=0){
     boatX++;
+    boatVel.add(2,0);
+    boatDir=0;
   }}
 }
