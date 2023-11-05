@@ -21,57 +21,60 @@ let lakeMidRedAcc;
 let lakeMidGreenVel;
 let lakeMidGreenAcc;
 
-function preload() {
-	img = loadImage('Images/Scream.jpeg');
-}
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  img.resize(width, height);
-  console.log(width);
-  //clear the canvas
-  let segmentWidth = img.width / numSegments;
-  let segmentHeight = img.height / numSegments;
-  for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
-    //this is looping over the height
-    for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
-      //this loops over width
-      //This will create a segment for each x and y position
-      particles.pop();
-    }
-  }
-//redraw the particle
-segmentWidth = img.width / numSegments;
-segmentHeight = img.height / numSegments;
-  for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
-    //this is looping over the height
-    for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
-      //this loops over width
-      //This will create a segment for each x and y position
-      let pX=segXPos;
-      let pY=segYPos;
-      particles.push(new Particle(pX,pY));
-    }
-  }
-  //raddom create a new boat
-  boatX=random(width);
-  boatY=random(0.5*height);
-  boatDir=0;
-  //make sure the position of boat is in the lake
-  if((boatX*40/81+25/71*width)<boatY){
-    boatY=boatX*40/81+25/71*width;
-  }
-  else if(boatY<21/71*width){
-    boatY=21/71*width;
-}
-}
-function setup() {
-	canvasSize = min(windowWidth, windowHeight);
-	createCanvas(canvasSize, canvasSize);
-	img.resize(width, height);
-  console.log(width);
-  console.log(height);
+let imageWidth;
+let imageHeight;
 
-	strokeWeight(4/500*width);//the size of ever particle
+let slope;
+let intercept;
+let legStatus;
+// Define variables for the starting point and end points of the line segments
+let originX;
+let originY;
+let line1EndX;
+let line1EndY;
+let line2EndX;
+let line2EndY;
+let angle1;
+let angle2;
+let lineWidth;
+let numLines;
+let personCount;
+
+let sky_particles = [];
+// Set the noise ratio of sky particles
+let sky_noiseScale = 0.01;
+// Set the spacing between sky particles
+let sky_space = 5;
+// Set the mode of sky particles
+let sky_mode = 1;
+// Set the height of sky particles
+let sky_height;
+
+
+function preload() {
+	img = loadImage('Images/Scream1.jpg');
+  pic = loadImage('Images/The_Scream_Figure.png');
+}
+
+function setup() {
+	//canvasSize = min(windowWidth, windowHeight);
+	
+	//img.resize(width, height);
+  if((windowWidth/windowHeight)>(810/1024)){
+    createCanvas(windowHeight/1024*810, windowHeight);
+    img.resize(windowHeight/1024*810, windowHeight);
+    pic.resize(windowHeight/1024*810, windowHeight);
+    imageWidth=height/1024*810;
+    imageHeight=height;
+  }else{
+    createCanvas(windowWidth, windowWidth/810*1024);
+    img.resize(windowWidth, windowWidth/810*1024);
+    pic.resize(windowWidth, windowWidth/810*1024);
+    imageWidth=width;
+    imageHeight=width/810*1024;
+  }
+
+	strokeWeight(5/500*img.width);//the size of ever particle
 	background(0);//black background
 
   push();
@@ -174,18 +177,57 @@ segmentHeight = img.height / numSegments;
   boatY=random(0.5*img.height);
   boatDir=0;
   //make sure the position of boat is in the lake
-  if((boatX*40/81+25/71*width)<boatY){
-    boatY=boatX*40/81+25/71*width;
+  if((boatX*40/81+30/81*img.height)<boatY){
+    boatY=boatX*40/81+30/81*img.height;
   }
-  else if(boatY<21/71*width){
-    boatY=21/71*width;
+  else if(boatY<28/81*img.height){
+    boatY=28/81*img.height;
 }
+//bridge&2 small people
+slope = (600 - 380) / (100 - 0);
+intercept = 380/1024*img.height;
+legStatus=0;
+originY = 380/1024*img.height;
+line1EndX = img.width;
+line1EndY = 870/1024*img.height;
+line2EndY = img.height;
+angle1 = atan2(line1EndY - originY, line1EndX - originX);
+angle2 = atan2(line2EndY - originY, line2EndX - originX);
+
+lineWidth = 8/810*img.width;  // Set the line width for the random lines
+numLines = 600;  // Set the number of random lines to draw
+push();
+strokeWeight(lineWidth); 
+drawRandomLines(originX, originY, angle1, angle2, numLines); 
+
+// Calculate the x based on frameCount and the corresponding y
+personCount=0;
+let x = (personCount % 100);
+let y = slope * x + intercept;
+
+// Draw the people, positions change over time with the frameCount
+drawPeople(x, y);
+pop();
 }
+
 function draw() {
 //Draw a black rectangle with an opacity of 20 to create the trail effect on each frame
 	fill(0, 20);
 	noStroke();
-	rect(0, 0, width, height);
+	rect(0, sky_height, img.width, img.height);
+  //ease of sky
+  push();
+  fill(233,197,111,1);
+  rect(0,0,img.width,sky_height);
+  pop();
+  //ease of boat
+  push();
+  fill(0,20);
+  rect(boatX-10,boatY-10,20,20);
+  pop();
+  //draw sky
+  skyDraw();
+
 	//update the position of each particle each frame
 	for (let p of particles) {
 		p.move();
@@ -243,8 +285,8 @@ class Particle {
     let blueValue=blue(this.color);
     let redValue=red(this.color);
     let greenValue=green(this.color);
-    //usr if to get the area of blue lake
-    if((this.pos.x*40/81+25/71*height)>this.pos.y&&(redValue<100||blueValue>150)&&this.pos.y>height*0.19){
+    //use if to get the area of blue lake
+    if((this.pos.x*70/81+38/81*img.height)>this.pos.y&&(redValue<100||blueValue>150)&&this.pos.y>img.height*0.19){
       let attraction = p5.Vector.sub(this.target, this.pos);
       attraction.mult(attForce);
       //let tmpForce = p5.Vector.sub(createVector(mouseX, mouseY), this.pos).limit(10);
@@ -262,7 +304,11 @@ class Particle {
       if(this.pos.y<=img.height*0.19){
         this.pos.y=img.height*0.19+1;
       }
-    }else if(this.pos.y<height*0.44&&redValue>180&&greenValue>120&&this.pos.y>height*0.32){
+    }else if(this.pos.y<img.height*0.32&&redValue>120){
+      //clear the sky part
+      this.color[3]=0;
+    }
+    else if(this.pos.y<img.height*0.44&&redValue>180&&greenValue>120&&this.pos.y>img.height*0.32){
     //add random gradient of color to the stationary particles in the middle of the lake
       lakeMidRedAcc=random(-0.5,0.5);
       lakeMidRedAcc=random(-0.5,0.5);
@@ -307,24 +353,6 @@ class Particle {
         this.color[1]=120;
         lakeMidGreenVel=5;
       }
-    }else if((this.pos.x*79/81+height*0.4)<this.pos.y){
-      //draw the bridge, make the bridge particles flow toward the corner 
-      if(this.pos.y>=height){
-        //if a particle come the margin of the image, move this partivle to the starting point
-        this.pos.y=this.pos.y-this.pos.x*79/81;
-        this.pos.x=0;
-      }
-      else{
-        //make the particle move follow the direction of the bridge
-        if(width>(500/700*height)){
-          this.pos.add(5*1,5*79/81);
-        }else if(width>(200/700*height)){
-          this.pos.add(2*1,2*79/81);
-        }else{
-          this.pos.add(0.5*1,0.5*79/81);
-        }
-      }
-
     }
 	}
 	display() {
@@ -351,13 +379,19 @@ function boat(x,y){
   rect(bX,bY-7,5,2);
   pop();
   //make sure boat move in the blue lake
-  if((boatX*40/81+25/71*width)<boatY){
+  if((boatX*40/81+30/81*img.height)<boatY){
     boatAcc.y=-0.2;
     boatY--;
   }
-  else if(boatY<21/71*width){
-    boatY++;
-    boatAcc.y=0.2;
+  else if(boatY<28/81*img.height){
+    //boatY++;
+    //boatAcc.y=0.2;
+    boatVel.add(0,2);
+    boatY=boatY+boatVel.y;
+    boatAcc.add(random(-0.1,0.1),random(-0.1,0.1));
+    boatAcc.limit(0.5);
+    boatVel.add(boatAcc);
+    boatVel.limit(2);//make sure the speed of the boat not too fast
   }else if(boatDir==1){
     boatX--;
     boatY--;
@@ -562,7 +596,7 @@ function drawPeople(x, y) {
   ellipse(0, -5/1024*img.height, 20/810*img.width, 45/1024*img.height);
   //leg
   stroke(108, 92, 59);
-  strokeWeight(2);
+  strokeWeight(2/810*img.width);
   if(legStatus==0){
     line(-2/810*img.width,17/1024*img.height,-2/810*img.width,35/1024*img.height);
     line(2/810*img.width,17/1024*img.height,2/810*img.width,39/1024*img.height);
