@@ -240,11 +240,10 @@ class Particle {
     if((this.pos.x*70/81+38/81*img.height)>this.pos.y&&(redValue<100||blueValue>150)&&this.pos.y>img.height*0.19){
       let attraction = p5.Vector.sub(this.target, this.pos);
       attraction.mult(attForce);
-      //let tmpForce = p5.Vector.sub(createVector(mouseX, mouseY), this.pos).limit(10);
       //make lake particle leave away from the boat to imitate that the boat whipped up waves
       //the reference of the use of tmpForce & attraction from https://openprocessing.org/sketch/1084140
       let tmpForce = p5.Vector.sub(createVector(boatX, boatY), this.pos).limit(5/700*img.height);
-      let repulsion = tmpForce.copy().normalize().mult(-10/700*img.height).sub(tmpForce);
+      let repulsion = tmpForce.copy().normalize().mult(-20/1024*img.height).sub(tmpForce);
       repulsion.mult(repForce);
       this.acc = p5.Vector.add(attraction, repulsion);
       this.vel.mult(0.97);
@@ -309,8 +308,12 @@ class Particle {
 	display() {
     push();
     stroke(this.color);
-    strokeWeight(8/810*width);
-    line(this.pos.x, this.pos.y,this.pos.x+25/810*img.width,this.pos.y+4/1024*img.height)
+    let lakeSlope=0.5;
+    let changeX=random(5,30)/810*img.width;
+    if(this.pos.y>0.2*img.height){
+      strokeWeight(random(2,10)/810*width);
+      line(this.pos.x, this.pos.y,this.pos.x+changeX,this.pos.y+changeX*lakeSlope);
+    }
     pop();
 	}
 }
