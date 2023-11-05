@@ -5,10 +5,8 @@ let repForce = 0.01;
 
 let particles = [];
 let personParticles=[];
-let numParticle = 20000;
-let numSegments=120;
-let particlesPrimary=[];
-let m=[];
+let numParticle = 10000;
+let numSegments=100;
 let boatX;
 let boatY;
 let boatDir;
@@ -20,9 +18,6 @@ let lakeMidRedVel;
 let lakeMidRedAcc;
 let lakeMidGreenVel;
 let lakeMidGreenAcc;
-
-let imageWidth;
-let imageHeight;
 
 let slope;
 let intercept;
@@ -57,45 +52,57 @@ function preload() {
 }
 
 function setup() {
-	//canvasSize = min(windowWidth, windowHeight);
-	
-	//img.resize(width, height);
-  if((windowWidth/windowHeight)>(810/1024)){
-    createCanvas(windowHeight/1024*810, windowHeight);
-    img.resize(windowHeight/1024*810, windowHeight);
-    pic.resize(windowHeight/1024*810, windowHeight);
-    imageWidth=height/1024*810;
-    imageHeight=height;
-  }else{
-    createCanvas(windowWidth, windowWidth/810*1024);
-    img.resize(windowWidth, windowWidth/810*1024);
-    pic.resize(windowWidth, windowWidth/810*1024);
-    imageWidth=width;
-    imageHeight=width/810*1024;
-  }
-
+  imageResize();
 	strokeWeight(5/500*img.width);//the size of ever particle
 	background(0);//black background
-
-  push();
-  fill(233,197,111);
-  rect(0,0,img.width,sky_height);
-  pop();
-
-  sky_height=img.height*0.35;
+  lakeSetup();
+  sky_height=img.height*0.32;
   skySetup();
-
 	boatVel = createVector(0, 0);
   boatAcc = createVector(0, 0);
+  bridgeSetup();
+}
 
-  bridgeVel=createVector(79/81, 1);
-  bridgeAcc=createVector(0, 0);
+function draw() {
+  easing();
+  //draw sky
+  skyDraw();
+	//update the position of each particle each frame
+	for (let p of particles) {
+		p.move();
+		p.display();
+	}
+  //draw boat
+  boat(boatX,boatY);
+  drawBridgePeople();
+}
 
-  lakeMidRedVel=1;
-  lakeMidRedAcc=0;
-  lakeMidGreenVel=1;
-  lakeMidGreenAcc=0;
-
+function windowResized() {
+  imageResize();
+  sky_height=img.height*0.32;
+  skyReSetup();
+  //clear the canvas
+  clearParticle();
+  //redraw the particle
+  lakeSetup();
+  boatRestart()
+  bridgeSetup();
+}
+function clearParticle(){
+    //clear the canvas
+    let segmentWidth = img.width / numSegments;
+    let segmentHeight = img.height / numSegments;
+    for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
+      //this is looping over the height
+      for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
+        //this loops over width
+        //This will create a segment for each x and y position
+        particles.pop();
+        personParticles.pop();
+      }
+    }
+}
+function lakeSetup(){
   let segmentWidth = img.width / numSegments;
   let segmentHeight = img.height / numSegments;
 //use for loop to get every segment color of img and use particles array to store them, reference:https://canvas.sydney.edu.au/courses/53019/pages/week-7-tutorial?module_item_id=2098597
@@ -121,6 +128,41 @@ function setup() {
   else if(boatY<28/81*img.height){
     boatY=28/81*img.height;
   }
+}
+function imageResize(){
+  if((windowWidth/windowHeight)>(810/1024)){
+    createCanvas(windowHeight/1024*810, windowHeight);
+    img.resize(windowHeight/1024*810, windowHeight);
+    pic.resize(windowHeight/1024*810, windowHeight);
+
+  }else{
+    createCanvas(windowWidth, windowWidth/810*1024);
+    img.resize(windowWidth, windowWidth/810*1024);
+    pic.resize(windowWidth, windowWidth/810*1024);
+
+  }
+}
+function boatRestart(){
+   //raddom create a new boat
+   boatX=random(img.width);
+   boatY=random(0.5*img.height);
+   boatDir=0;
+   //make sure the position of boat is in the lake
+   if((boatX*40/81+30/81*img.height)<boatY){
+     boatY=boatX*40/81+30/81*img.height;
+   }
+   else if(boatY<28/81*img.height){
+     boatY=28/81*img.height;
+ }
+}
+function bridgeSetup(){
+  bridgeVel=createVector(79/81, 1);
+  bridgeAcc=createVector(0, 0);
+
+  lakeMidRedVel=1;
+  lakeMidRedAcc=0;
+  lakeMidGreenVel=1;
+  lakeMidGreenAcc=0;
 
 //bridge&2 small people
   slope = (600 - 380) / (100 - 0);
@@ -128,116 +170,8 @@ function setup() {
   personCount=0;
   legStatus=0;
 }
-
-
-function windowResized() {
-  if((windowWidth/windowHeight)>(810/1024)){
-    resizeCanvas(windowHeight/1024*810, windowHeight);
-    img.resize(windowHeight/1024*810, windowHeight);
-    pic.resize(windowHeight/1024*810, windowHeight);
-    imageWidth=height/1024*810;
-    imageHeight=height;
-  }else{
-    resizeCanvas(windowWidth, windowWidth/810*1024);
-    img.resize(windowWidth, windowWidth/810*1024);
-    pic.resize(windowWidth, windowWidth/810*1024);
-    imageWidth=width;
-    imageHeight=width/810*1024;
-  }
-  sky_height=img.height*0.35;
-  skyReSetup();
-  //clear the canvas
-  let segmentWidth = img.width / numSegments;
-  let segmentHeight = img.height / numSegments;
-  for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
-    //this is looping over the height
-    for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
-      //this loops over width
-      //This will create a segment for each x and y position
-      particles.pop();
-      personParticles.pop();
-    }
-  }
-//redraw the particle
-segmentWidth = img.width / numSegments;
-segmentHeight = img.height / numSegments;
-  for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
-    //this is looping over the height
-    for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
-      //this loops over width
-      //This will create a segment for each x and y position
-      let pX=segXPos;
-      let pY=segYPos;
-      particles.push(new Particle(pX,pY));
-      personParticles.push(new PersonParticle(pX,pY));
-    }
-  }
-  //raddom create a new boat
-  boatX=random(img.width);
-  boatY=random(0.5*img.height);
-  boatDir=0;
-  //make sure the position of boat is in the lake
-  if((boatX*40/81+30/81*img.height)<boatY){
-    boatY=boatX*40/81+30/81*img.height;
-  }
-  else if(boatY<28/81*img.height){
-    boatY=28/81*img.height;
-}
-//bridge&2 small people
-slope = (600 - 380) / (100 - 0);
-intercept = 380/1024*img.height;
-legStatus=0;
-originY = 380/1024*img.height;
-line1EndX = img.width;
-line1EndY = 870/1024*img.height;
-line2EndY = img.height;
-angle1 = atan2(line1EndY - originY, line1EndX - originX);
-angle2 = atan2(line2EndY - originY, line2EndX - originX);
-
-lineWidth = 8/810*img.width;  // Set the line width for the random lines
-numLines = 600;  // Set the number of random lines to draw
-push();
-strokeWeight(lineWidth); 
-drawRandomLines(originX, originY, angle1, angle2, numLines); 
-
-// Calculate the x based on frameCount and the corresponding y
-personCount=0;
-let x = (personCount % 100);
-let y = slope * x + intercept;
-
-// Draw the people, positions change over time with the frameCount
-drawPeople(x, y);
-pop();
-}
-
-function draw() {
-//Draw a black rectangle with an opacity of 20 to create the trail effect on each frame
-	fill(0, 20);
-	noStroke();
-	rect(0, sky_height, img.width, img.height);
-  //ease of sky
-  push();
-  fill(233,197,111,1);
-  rect(0,0,img.width,sky_height);
-  pop();
-  //ease of boat
-  push();
-  fill(0,20);
-  rect(boatX-10,boatY-10,20,20);
-  pop();
-  //draw sky
-  skyDraw();
-
-	//update the position of each particle each frame
-	for (let p of particles) {
-		p.move();
-		p.display();
-	}
-
-//draw boat
-  boat(boatX,boatY);
-
-//bridge&2 people
+function drawBridgePeople(){
+  //bridge&2 people
   originX = 0;
   originY = 380/1024*img.height;
   line1EndX = img.width;
@@ -268,7 +202,23 @@ function draw() {
   // draw the eyes and mouth area
   drawEyesMouth();
 }
-
+function easing(){
+  //Draw a black rectangle with an opacity of 20 to create the trail effect on each frame
+	fill(0, 20);
+	noStroke();
+	rect(0, sky_height, img.width, img.height);
+  //ease of sky
+  push();
+  fill(233,197,111,1);
+  rect(0,0,img.width,sky_height);
+  pop();
+  //ease of boat
+  push();
+  fill(0,20);
+  rect(boatX-10,boatY-10,20,20);
+  pop();
+}
+//particles of lake
 class Particle {
 	constructor(x, y) {
     this.x = x;
@@ -356,15 +306,16 @@ class Particle {
     }
 	}
 	display() {
-		stroke(this.color);
-		point(this.pos.x, this.pos.y);
+    push();
+    stroke(this.color);
+    strokeWeight(8/810*width);
+    line(this.pos.x, this.pos.y,this.pos.x+25/810*img.width,this.pos.y+4/1024*img.height)
+    pop();
 	}
 }
 
 
 function boat(x,y){
-  //let bX=mouseX;
-  //let bY=mouseY;
   let bX=x;
   let bY=y;
   //use semicircle, rectangle, line to form a boat
@@ -384,8 +335,6 @@ function boat(x,y){
     boatY--;
   }
   else if(boatY<28/81*img.height){
-    //boatY++;
-    //boatAcc.y=0.2;
     boatVel.add(0,2);
     boatY=boatY+boatVel.y;
     boatAcc.add(random(-0.1,0.1),random(-0.1,0.1));
@@ -395,10 +344,6 @@ function boat(x,y){
   }else if(boatDir==1){
     boatX--;
     boatY--;
-    /*if(boatX<=0){
-      boatVel.mult(-1);
-      boatX=boatX+boatVel.x;
-    }*/
   }else{
     // make boat move randomly, and add ease effect
     boatAcc.add(random(-0.1,0.1),random(-0.1,0.1));
@@ -442,6 +387,11 @@ function skySetup() {
       sky_particles.push(particle);
     }
   }
+  push();
+  //sky background
+  fill(233,197,111);
+  rect(0,0,img.width,sky_height);
+  pop();
 }
 function skyReSetup() {
   img.loadPixels();
@@ -594,10 +544,11 @@ function drawPeople(x, y) {
   fill(108, 92, 59);
   ellipse(0, -30/1024*img.height, 10/810*img.width, 12/1024*img.height);
   ellipse(0, -5/1024*img.height, 20/810*img.width, 45/1024*img.height);
-  //leg
+  //draw legs and make it move
   stroke(108, 92, 59);
   strokeWeight(2/810*img.width);
   if(legStatus==0){
+    //Make the legs longer in front and shorter in back, according to the principle of nearly big, round and small
     line(-2/810*img.width,17/1024*img.height,-2/810*img.width,35/1024*img.height);
     line(2/810*img.width,17/1024*img.height,2/810*img.width,39/1024*img.height);
     stroke(48, 58, 68);
@@ -626,7 +577,6 @@ function drawPeople(x, y) {
 
 
 class PersonParticle {
- 
   constructor(pX, pY) {
     this.pos = createVector(pX, pY);
     this.vel = createVector(0, 0);
@@ -635,13 +585,12 @@ class PersonParticle {
     this.initialX = pX; // Store the initial horizontal position
     this.initialY = pY; // Store the initial vertical position
   }
-  
   move() {
+    //use color value to divide the man's body & face
     angleMode(DEGREES);
     let redValue = red(this.color);
     let blueValue = blue(this.color);
     let greenValue = green(this.color);
-
     if(blueValue <80 && redValue <100 && greenValue < 100){  
       this.vel.mult(0.97/810*img.width);
       this.vel.limit(3/810*img.width);
@@ -655,8 +604,8 @@ class PersonParticle {
         push();
         fill( this.color); // Circle color
         noStroke();
-        if(this.pos.y>0.65*img.height){
-          ellipse(this.pos.x+40/810*img.width, this.pos.y-10/1024*img.height, 6/810*img.width, random(15,35)/1024*img.height); // Draw a circle based on particle's position
+        if(this.pos.y>0.63*img.height){
+          ellipse(this.pos.x+42/810*img.width, this.pos.y-10/1024*img.height, 8/810*img.width, random(15,35)/1024*img.height); // Draw a circle based on particle's position
         }
         pop();
        
@@ -676,7 +625,9 @@ class PersonParticle {
         let translateX = 0;
         let translateY = sin(frameCount) * 10/1024*img.height;
         translate(translateX, translateY);
-        ellipse(this.pos.x, this.pos.y, random(15,25)/810*img.width, 5/1024*img.height); // Draw a circle based on particle's position
+        if(this.pos.y<0.7*img.height){
+          ellipse(this.pos.x, this.pos.y, random(20,30)/810*img.width, 10/1024*img.height); // Draw a circle based on particle's position
+        }
         pop();
       } 
       angleMode(RADIANS);
@@ -685,12 +636,11 @@ class PersonParticle {
 //draw the changed eyes & mouth of the front person 
 function drawEyesMouth(){
   push(); 
-  fill(117,100,73);
-  stroke(51);
-  strokeWeight(2/810*img.width);
+  fill(55,60,50);
+  noStroke();
   let eyeheight=random(0,40)/1024*img.height;
-  ellipse (img.width*355/810,img.height* 550/1024,30/810*img.width,eyeheight);
-  ellipse (img.width*410/810,img.height* 550/1024,30/810*img.width,eyeheight);
+  ellipse (img.width*355/810,img.height* 555/1024,30/810*img.width,eyeheight);
+  ellipse (img.width*410/810,img.height* 555/1024,30/810*img.width,eyeheight);
   ellipse (img.width*380/810,img.height* 620/1024,20/810*img.width,eyeheight);
   pop();
 }
