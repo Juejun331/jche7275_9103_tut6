@@ -205,7 +205,7 @@ function drawBridgePeople(){
 }
 function easing(){
   //Draw a black rectangle with an opacity of 20 to create the trail effect on each frame
-	fill(0, 20);
+	fill(0, 10);
 	noStroke();
 	rect(0, sky_height, img.width, img.height);
   //ease of sky
@@ -307,11 +307,17 @@ class Particle {
 	}
 	display() {
     push();
+    let blueValue=blue(this.color);
+    let redValue=red(this.color);
+    this.color[3]=150;
     stroke(this.color);
     let lakeSlope=0.5;
-    let changeX=random(5,30)/810*img.width;
-    if(this.pos.y>0.2*img.height){
-      strokeWeight(random(2,10)/810*width);
+    let changeX=random(10,40)/810*img.width;
+    if(this.pos.y>0.23*img.height&&(redValue<100||blueValue>150)){
+      strokeWeight(random(5,10)/810*width);
+      line(this.pos.x, this.pos.y,this.pos.x+changeX,this.pos.y+changeX*lakeSlope);
+    }else if(this.pos.y>0.3*img.height){
+      strokeWeight(random(5,20)/810*width);
       line(this.pos.x, this.pos.y,this.pos.x+changeX,this.pos.y+changeX*lakeSlope);
     }
     pop();
@@ -360,21 +366,12 @@ function boat(x,y){
 //sky
 function skySetup() {
   img.loadPixels();
-
   for (let x = 0; x < img.width; x += sky_space) {
     // Traverse the canvas width and step based on the spacing between sky particles
     for (let y = 0; y < sky_height; y += sky_space) {
       // Traverse the height of the sky particles and step based on the spacing between the sky particles
-      const i = 4 * (y * img.width + x); // Calculate the index value of the current pixel
-      // Get the color value of a pixel
-      const c = [
-        img.pixels[i],
-        img.pixels[i + 1],
-        img.pixels[i + 2],
-      ];
-
       // Create a sky particle object
-      let particle = new SkyParticle(x, y, c);
+      let particle = new SkyParticle(x, y);
       // Add the sky particle object to the array
       sky_particles.push(particle);
     }
@@ -388,6 +385,7 @@ function skySetup() {
 function skyReSetup() {
   img.loadPixels();
 //clear the primary sky particle
+  //sky_space=5/810*img.width;
   for (let x = 0; x < img.width; x += sky_space) {
     for (let y = 0; y < sky_height; y += sky_space) {
       sky_particles.pop();
@@ -399,16 +397,8 @@ function skyReSetup() {
     // Traverse the canvas width and step based on the spacing between sky particles
     for (let y = 0; y < sky_height; y += sky_space) {
       // Traverse the height of the sky particles and step based on the spacing between the sky particles
-      const i = 4 * (y * img.width + x); // Calculate the index value of the current pixel
-      // Get the color value of a pixel
-      const c = [
-        img.pixels[i],
-        img.pixels[i + 1],
-        img.pixels[i + 2],
-      ];
-
       // Create a sky particle object
-      let particle = new SkyParticle(x, y, c);
+      let particle = new SkyParticle(x, y);
       // Add the sky particle object to the array
       sky_particles.push(particle);
     }
@@ -423,11 +413,12 @@ function skyDraw() {
 }
 
 class SkyParticle {
-  constructor(x, y, c) {
+  constructor(x, y) {
     this.x = x; // The abscissa of the particle
     this.y = y; // The vertical coordinate of the particle
     // color of particles
-    this.c = color(c[0], c[1], c[2]);
+    this.c = img.get(x, y);
+    this.colorPri=img.get(x, y);
     this.first = true; // Is it the first particle
     this.initX = x; // initial abscissa
     this.initY = y; // Initial vertical coordinate
@@ -442,14 +433,36 @@ class SkyParticle {
 
   draw() {
     noStroke();
+    //random change the color of sky particle
+    this.c[0]=this.c[0]+random(-5,5);
+    this.c[1]=this.c[1]+random(-5,5);
+    if(this.c[0]>255){
+      this.c[0]=255;
+    }else if (this.c[0]<150){
+      this.c[0]=150;
+    }
+    if(this.c[1]>220){
+      this.c[1]=220;
+    }else if (this.c[1]<0){
+      this.c[1]=0;
+    }
+    //make sure the color change is not too much
+    if((this.c[0]-this.colorPri[0]>=50)||(this.c[1]-this.colorPri[1]>=50)||(this.c[0]-this.colorPri[0]<=-50)||(this.c[1]-this.colorPri[1]<=-50))
+    {
+      this.c[0]=this.colorPri[0];
+      this.c[1]=this.colorPri[1];
+    }
+    this.c[3]=80;
     fill(this.c); // Set the fill color of particles
-    if (this.first) {
-      // If it is the first particle, draw a rectangular fixed background
-      rect(this.x, this.y, sky_space, sky_space);
-      this.first = false;
-    } else {
-      // Otherwise draw elliptical particles
-      ellipse(this.x, this.y, sky_space, sky_space);
+    if(this.y<0.32*height){
+      if (this.first) {
+        // If it is the first particle, draw a rectangular fixed background
+        rect(this.x, this.y, sky_space, sky_space);
+        this.first = false;
+      } else {
+        // Otherwise draw elliptical particles
+        ellipse(this.x, this.y, random(3,10)/810*img.width*sky_space, sky_space*random(1,3)/1024*img.height);
+      }
     }
   }
 
