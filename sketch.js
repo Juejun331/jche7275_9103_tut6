@@ -74,6 +74,7 @@ function draw() {
 	}
   //draw boat
   boat(boatX,boatY);
+  
   drawBridgePeople();
 }
 
@@ -123,10 +124,10 @@ function lakeSetup(){
   boatDir=0;
   //make sure the position of boat is in the lake
   if((boatX*40/81+30/81*img.height)<boatY){
-    boatY=boatX*40/81+30/81*img.height;
+    boatY=boatX*40/81+30/81*img.height-2/81*img.height;
   }
   else if(boatY<28/81*img.height){
-    boatY=28/81*img.height;
+    boatY=28/81*img.height+2/81*img.height;
   }
 }
 function imageResize(){
@@ -149,11 +150,11 @@ function boatRestart(){
    boatDir=0;
    //make sure the position of boat is in the lake
    if((boatX*40/81+30/81*img.height)<boatY){
-     boatY=boatX*40/81+30/81*img.height;
+     boatY=boatX*40/81+30/81*img.height-2/81*img.height;
    }
    else if(boatY<28/81*img.height){
-     boatY=28/81*img.height;
- }
+     boatY=28/81*img.height+2/81*img.height;
+    }
 }
 function bridgeSetup(){
   bridgeVel=createVector(79/81, 1);
@@ -330,38 +331,26 @@ function boat(x,y){
   rect(bX,bY-7,5,2);
   pop();
   //make sure boat move in the blue lake
-  if((boatX*40/81+30/81*img.height)<boatY){
-    boatAcc.y=-0.2;
-    boatY--;
+  if((boatX*30/81+29/81*img.height)<boatY){
+    //boatAcc.y=-0.2;
+    boatY=boatY-2/1024*img.height;
+    boatVel.sub(0,1/1024*img.height);
   }
-  else if(boatY<28/81*img.height){
-    boatVel.add(0,2);
-    boatY=boatY+boatVel.y;
-    boatAcc.add(random(-0.1,0.1),random(-0.1,0.1));
-    boatAcc.limit(0.5);
-    boatVel.add(boatAcc);
-    boatVel.limit(2);//make sure the speed of the boat not too fast
-  }else if(boatDir==1){
-    boatX--;
-    boatY--;
+  else if(boatY<270/810*img.height){
+    boatY=boatY+2/810*img.height;
+    boatVel.add(0,1/1024*img.height);
   }else{
     // make boat move randomly, and add ease effect
     boatAcc.add(random(-0.1,0.1),random(-0.1,0.1));
-    boatAcc.limit(0.5);
+    boatAcc.limit(0.5/810*img.width,0.5/810*img.width);
     boatVel.add(boatAcc);
-    boatVel.limit(2);//make sure the speed of the boat not too fast
+    boatVel.limit(2/810*img.width,2/810*img.width);//make sure the speed of the boat not too fast
     boatX=boatX+boatVel.x;
     boatY=boatY+boatVel.y;
   if(boatX>=img.width){
-    boatDir=1;
+    boatRestart()
   }else if(boatX<=0){
-    boatX=boatX+10;
-    boatVel.add(2,0);
-    boatDir=0;
-    boatAcc.add(random(-0.1,0.1),random(-0.1,0.1));
-    boatAcc.limit(0.5);
-    boatVel.add(boatAcc);
-    boatVel.limit(2);//make sure the speed of the boat not too fast
+    boatRestart()
   }}
 }
 
