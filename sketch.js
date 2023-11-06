@@ -91,17 +91,8 @@ function windowResized() {
 }
 function clearParticle(){
     //clear the canvas
-    let segmentWidth = img.width / numSegments;
-    let segmentHeight = img.height / numSegments;
-    for (let segYPos=0; segYPos<img.height; segYPos+=segmentHeight) {
-      //this is looping over the height
-      for (let segXPos=0; segXPos<img.width; segXPos+=segmentWidth) {
-        //this loops over width
-        //This will create a segment for each x and y position
-        particles.pop();
-        personParticles.pop();
-      }
-    }
+    particles = [];
+    personParticles = [];
 }
 function lakeSetup(){
   let segmentWidth = img.width / numSegments;
@@ -461,7 +452,7 @@ class SkyParticle {
         this.first = false;
       } else {
         // Otherwise draw elliptical particles
-        ellipse(this.x, this.y, random(3,10)/810*img.width*sky_space, sky_space*random(1,3)/1024*img.height);
+        ellipse(this.x, this.y+random(-3,3)/1024, random(5,10)/810*img.width*sky_space, sky_space*random(2,4)/1024*img.height);
       }
     }
   }
